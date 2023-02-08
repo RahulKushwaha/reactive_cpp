@@ -3,7 +3,7 @@ project(reactive_cpp)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(reactive_cpp main.cpp Subscriber.h Mono.h BaseSubscriber.h
-        ConsolePrinterSubscriber.h MonoFlatMapIterable.h MonoMap.h AbstractMono.h)
+add_executable(reactive_cpp main.cpp Subscriber.h MonoJust.h BaseSubscriber.h
+        ConsolePrinterSubscriber.h MonoFlatMapIterable.h MonoMap.h MonoFilter.h Mono.h)
 
 target_link_libraries(reactive_cpp -fsanitize=address)

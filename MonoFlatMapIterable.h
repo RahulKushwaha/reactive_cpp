@@ -2,8 +2,7 @@
 // Created by Rahul  Kushwaha on 2/6/23.
 //
 
-#ifndef REACTIVE_CPP_MONOFLATMAPITERABLE_H
-#define REACTIVE_CPP_MONOFLATMAPITERABLE_H
+#pragma once
 
 #include "Subscriber.h"
 
@@ -49,8 +48,8 @@ class MonoFlatMapIterable: public Publisher<B>, public Subscriber<A> {
 
     std::invoke(subscriptionHook_);
 
-    subscription_ = std::make_shared<SubscriptionImpl<A, B>>
-        (*subscriber_.get(), *this);
+    subscription_ = std::make_shared<SubscriptionImpl < A, B>>
+    (*subscriber_.get(), *this);
 
     subscriber_->onSubscribe(subscription_);
   }
@@ -122,5 +121,3 @@ class MonoFlatMapIterable: public Publisher<B>, public Subscriber<A> {
 };
 
 }
-
-#endif //REACTIVE_CPP_MONOFLATMAPITERABLE_H

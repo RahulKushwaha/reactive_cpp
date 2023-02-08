@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include "MonoJust.h"
 #include "Mono.h"
 #include "ConsolePrinterSubscriber.h"
 #include <string>
@@ -10,15 +11,46 @@ int main() {
   std::cout << "Hello, World!" << std::endl;
 
   {
-    Mono<std::string> monoString{"7"};
-    auto stringToIntMono = monoString.template map<std::int32_t>(
-        [](std::string input)
-            -> std::int32_t { return 7; });
-
+//    std::shared_ptr<Mono_<std::int32_t>>
+//        mon = Mono_<std::int32_t>::just(600);
+//
+//    std::shared_ptr<ConsolePrinterSubscriber>
+//        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
+//
+//    mon->subscribe(consolePrinter);
+  }
+  {
     std::shared_ptr<ConsolePrinterSubscriber>
         consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
 
-    stringToIntMono->subscribe(consolePrinter);
+
+    std::string input = "90";
+    std::shared_ptr<Mono<std::string>>
+        mon = Mono<std::string>::just(input);
+
+    mon->template map<int>([](const std::string &input) {
+          return std::stoi(input);
+        })
+        ->
+            template map<int>([](int in) {
+          return in * 8;
+        })
+        ->filter([](auto val) {
+          return true;
+        })
+        ->subscribe(consolePrinter);
+  }
+
+  {
+//    Mono<std::string> monoString{"799"};
+//    auto stringToIntMono = monoString.template map<std::int32_t>(
+//        [](const std::string &input)
+//            -> std::int32_t { return std::stoi(input); });
+//
+//    std::shared_ptr<ConsolePrinterSubscriber>
+//        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
+//
+//    stringToIntMono->subscribe(consolePrinter);
   }
   {
 //    std::vector<std::int32_t> elements;

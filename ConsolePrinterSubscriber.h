@@ -1,9 +1,7 @@
 //
 // Created by Rahul  Kushwaha on 2/6/23.
 //
-
-#ifndef REACTIVE_CPP_CONSOLEPRINTERSUBSCRIBER_H
-#define REACTIVE_CPP_CONSOLEPRINTERSUBSCRIBER_H
+#pragma once
 #include <cstdint>
 #include <iostream>
 
@@ -35,6 +33,3 @@ class ConsolePrinterSubscriber: public BaseSubscriber<std::int32_t> {
 };
 
 }
-
-
-#endif //REACTIVE_CPP_CONSOLEPRINTERSUBSCRIBER_H

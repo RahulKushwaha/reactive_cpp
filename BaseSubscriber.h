@@ -2,8 +2,8 @@
 // Created by Rahul  Kushwaha on 2/6/23.
 //
 
-#ifndef REACTIVE_CPP_BASESUBSCRIBER_H
-#define REACTIVE_CPP_BASESUBSCRIBER_H
+#pragma once
+
 #include "Subscriber.h"
 
 namespace rk::projects::reactive {
@@ -46,4 +46,3 @@ class BaseSubscriber: public Subscriber<T> {
 };
 
 }
-#endif //REACTIVE_CPP_BASESUBSCRIBER_H

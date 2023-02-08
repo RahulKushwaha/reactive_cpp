@@ -2,8 +2,7 @@
 // Created by Rahul  Kushwaha on 2/4/23.
 //
 
-#ifndef REACTIVE_CPP_SUBSCRIBER_H
-#define REACTIVE_CPP_SUBSCRIBER_H
+#pragma once
 
 #include <string>
 #include <memory>
@@ -40,6 +39,3 @@ class Publisher {
 };
 
 }
-
-
-#endif //REACTIVE_CPP_SUBSCRIBER_H
