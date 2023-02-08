@@ -9,10 +9,10 @@
 
 namespace rk::projects::reactive {
 
-template<class T, class V>
-class MonoFlatMapIterable: public Publisher<V>, public Subscriber<T> {
+template<class A, class B>
+class MonoFlatMapIterable: public Publisher<B>, public Subscriber<A> {
  private:
-  using val_t = typename T::value_type;
+  using val_t = typename A::value_type;
   using vector_val_t = typename std::vector<val_t>;
 
  public:
@@ -24,7 +24,7 @@ class MonoFlatMapIterable: public Publisher<V>, public Subscriber<T> {
     subscription_->request(1);
   }
 
-  void onNext(T t) override {
+  void onNext(A t) override {
     payload_ = std::move(t);
 
     auto &vectorElements = static_cast<vector_val_t &>(payload_);
@@ -43,13 +43,13 @@ class MonoFlatMapIterable: public Publisher<V>, public Subscriber<T> {
     subscriptionHook_ = std::move(func);
   }
 
-  void subscribe(std::shared_ptr<Subscriber<V>> subscriber) override {
+  void subscribe(std::shared_ptr<Subscriber<B>> subscriber) override {
     std::cout << "MonoFlatMapIterable Subscribe" << std::endl;
     subscriber_ = std::move(subscriber);
 
     std::invoke(subscriptionHook_);
 
-    subscription_ = std::make_shared<SubscriptionImpl<T, V>>
+    subscription_ = std::make_shared<SubscriptionImpl<A, B>>
         (*subscriber_.get(), *this);
 
     subscriber_->onSubscribe(subscription_);
@@ -59,11 +59,11 @@ class MonoFlatMapIterable: public Publisher<V>, public Subscriber<T> {
 
  private:
 
-  template<class A, class B>
+  template<class U, class V>
   class SubscriptionImpl: public Subscription {
    public:
-    explicit SubscriptionImpl(Subscriber<B> &subscriber,
-                              MonoFlatMapIterable<A, B> &publisher)
+    explicit SubscriptionImpl(Subscriber<V> &subscriber,
+                              MonoFlatMapIterable<U, V> &publisher)
         : subscriber_{subscriber},
           publisher_{publisher},
           requestedSize_{0},
@@ -107,15 +107,15 @@ class MonoFlatMapIterable: public Publisher<V>, public Subscriber<T> {
     ~SubscriptionImpl() override = default;
 
    private:
-    Subscriber<B> &subscriber_;
-    MonoFlatMapIterable<A, B> &publisher_;
+    Subscriber<V> &subscriber_;
+    MonoFlatMapIterable<U, V> &publisher_;
     std::int64_t requestedSize_;
     std::int64_t fulfilment_;
   };
 
-  std::shared_ptr<Subscriber<V>> subscriber_;
+  std::shared_ptr<Subscriber<B>> subscriber_;
   std::shared_ptr<Subscription> subscription_;
-  T payload_;
+  A payload_;
   std::function<void(void)> subscriptionHook_;
 
   std::size_t currentIndex_{0};

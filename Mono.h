@@ -10,42 +10,20 @@
 #include "Subscriber.h"
 #include "MonoMap.h"
 #include "MonoFlatMapIterable.h"
+#include "AbstractMono.h"
 
 namespace rk::projects::reactive {
 
-template<class T>
-class Mono: public Publisher<T> {
+template<class A, class B = A>
+class Mono: public AbstractMono<A, B> {
  public:
-  explicit Mono(T t)
-      : payload_{std::move(t)}, state_{
-      std::make_unique<State>(State{StateName::SubscriptionStarted})} {}
-
-  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) override {
-    std::cout << "Mono Subscribe" << std::endl;
-    subscriber_ = std::move(subscriber);
-
-    // Make the state change.
-    state_ = std::make_unique<State>(State{StateName::SubscriptionComplete});
-
-    // Create Subscription
-    subscription_ = std::make_shared<SubscriptionImpl < T>>
-    (*subscriber_.get(), *this);
-    // Pass subscription
-    subscriber_->onSubscribe(subscription_);
-  }
-
-  template<class V>
-  std::shared_ptr<Publisher<V>> map(std::function<V(T)> function) {
-    std::shared_ptr<Publisher<V>> publisher =
-        std::make_shared<MonoMap<T, V>>(function);
-
-    return publisher;
-  }
+  explicit Mono(A t)
+      : AbstractMono<A, B>(std::move(t)) {}
 
   template<class V>
   std::shared_ptr<Publisher<V>> flatMapIterable() {
-    std::shared_ptr<MonoFlatMapIterable<T, V>> publisher =
-        std::make_shared<MonoFlatMapIterable<T, V>>();
+    std::shared_ptr<MonoFlatMapIterable<A, V>> publisher =
+        std::make_shared<MonoFlatMapIterable<A, V>>();
 
     auto subscriptionHookLambda = [subscriber = publisher, this]() {
       this->subscribe(subscriber);
@@ -56,58 +34,21 @@ class Mono: public Publisher<T> {
     return publisher;
   }
 
- private:
-  enum class StateName {
-    SubscriptionStarted,
-    SubscriptionComplete,
-    Processing,
-    Error,
-    Complete,
-  };
+  template<class V>
+  std::shared_ptr<Publisher<V>> map(std::function<V(B)> functor) {
+    std::shared_ptr<MonoMap<B, V>> publisher =
+        std::make_shared<MonoMap<B, V>>(std::move(functor));
 
-  struct State {
-    StateName stateName;
-  };
+    auto subscriptionHookLambda = [subscriber = publisher, this]() {
+      this->subscribe(subscriber);
+    };
 
-  template<class U>
-  class SubscriptionImpl: public Subscription {
-   public:
-    explicit SubscriptionImpl(Subscriber<U> &subscriber,
-                              Mono<U> &publisher)
-        : subscriber_{subscriber},
-          publisher_{publisher} {
-    }
+    publisher->setSubscriptionHook(subscriptionHookLambda);
 
-    void request(long n) override {
-      if (publisher_.state_->stateName != StateName::Complete
-          && publisher_.payload_.has_value()) {
-        auto &&value = *std::move(publisher_.payload_);
+    return publisher;
+  }
 
-        subscriber_.onNext(std::move(value));
-
-        publisher_.state_ =
-            std::make_unique<State>(State{StateName::Complete});
-      }
-
-      subscriber_.onComplete();
-    }
-
-    void cancel() override {
-    }
-
-    ~SubscriptionImpl() override = default;
-
-   private:
-    Subscriber<U> &subscriber_;
-    Mono<U> &publisher_;
-  };
-
-
- private:
-  std::optional<T> payload_;
-  std::shared_ptr<Subscriber<T>> subscriber_;
-  std::unique_ptr<State> state_;
-  std::shared_ptr<Subscription> subscription_;
+  ~Mono() override = default;
 };
 
 }

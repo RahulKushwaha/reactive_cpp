@@ -5,43 +5,26 @@
 #ifndef REACTIVE_CPP_MONOMAP_H
 #define REACTIVE_CPP_MONOMAP_H
 #include "Subscriber.h"
+#include "AbstractMono.h"
 
 namespace rk::projects::reactive {
 
-template<class T, class V>
-class MonoMap: public Subscriber<T>, public Publisher<V> {
+template<class A, class B>
+class MonoMap: public AbstractMono<A, B> {
  public:
-  template<class A, class B>
-  static MonoMap<A, B> makeMonoMap(std::function<B(A)> func) {
-    auto monoMap = MonoMap<A, B>{};
-    monoMap.functor_ = std::move(func);
-  }
+  explicit MonoMap(std::function<B(A)> functor)
+      : AbstractMono<A, B>({}),
+        functor_{std::move(functor)} {}
 
-  void onSubscribe(std::shared_ptr<Subscription> subscription) override {
-
-  }
-
-  void onNext(T t) override {
-
-  }
-
-  void onError(ReactiveError reactiveError) override {
-
-  }
-
-  void onComplete() override {
-
-  }
-
-  void subscribe(std::shared_ptr<Subscriber<T>> subscriber) {
-    subscriber_ = subscriber;
+  void onNext(A a) override {
+    std::cout << "Value Received: " << a << std::endl;
+    AbstractMono<A, B>::payload_ = functor_(a);
   }
 
   ~MonoMap() override = default;
 
  private:
-  std::shared_ptr<Subscriber<T>> subscriber_;
-  std::function<V(T)> functor_;
+  std::function<B(A)> functor_;
 };
 
 }
