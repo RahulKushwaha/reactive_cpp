@@ -11,8 +11,12 @@
 #include "MonoFilter.h"
 #include "MonoMap.h"
 #include "Subscriber.h"
+#include "FluxJust.h"
 
 namespace rk::projects::reactive {
+
+template<class A, class B>
+class Flux;
 
 template<class A, class B = A>
 class Mono: public Publisher<B>, public Subscriber<A> {
@@ -27,8 +31,7 @@ class Mono: public Publisher<B>, public Subscriber<A> {
   }
 
   std::shared_ptr<Mono<A, A>> filter(std::function<bool(A)> func) {
-    std::shared_ptr<MonoFilter<A>>
-        publisher =
+    std::shared_ptr<MonoFilter<A>> publisher =
         std::make_shared<MonoFilter<A>>(std::move(func));
 
     auto subscriptionHookLambda = [subscriber = publisher, this]() {
@@ -44,6 +47,20 @@ class Mono: public Publisher<B>, public Subscriber<A> {
   std::shared_ptr<Mono<B, V>> map(std::function<V(B)> functor) {
     std::shared_ptr<MonoMap<B, V>> publisher =
         std::make_shared<MonoMap<B, V>>(std::move(functor));
+
+    auto subscriptionHookLambda = [subscriber = publisher, this]() {
+      this->subscribe(subscriber);
+    };
+
+    publisher->setSubscriptionHook(subscriptionHookLambda);
+
+    return publisher;
+  }
+
+  template<class V>
+  std::shared_ptr<Flux<B, V>> flatMapIterable() {
+    std::shared_ptr<FluxJust<B, V >> publisher =
+        std::make_shared<FluxJust<B, V>>(B{});
 
     auto subscriptionHookLambda = [subscriber = publisher, this]() {
       this->subscribe(subscriber);
@@ -111,10 +128,11 @@ class Mono: public Publisher<B>, public Subscriber<A> {
     }
 
     void request(long n) override {
-      std::cout << "AbstractMono Request" << std::endl;
+      std::cout << "Mono Request" << std::endl;
       if (publisher_.state_->stateName != StateName::Complete
           && publisher_.payload_.has_value()) {
-        auto &&value = *std::move(publisher_.payload_);
+        // Fix me: Move object
+        auto value = *publisher_.payload_;
         publisher_.payload_.reset();
         subscriber_.onNext(std::move(value));
 

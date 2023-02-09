@@ -3,58 +3,37 @@
 //
 
 #pragma once
+#include <iostream>
 
+#include "Flux.h"
 #include "Subscriber.h"
 
 namespace rk::projects::reactive {
+template<class U, class V>
+class Flux;
 
-template<class A, class B>
-class MonoFlatMapIterable: public Publisher<B>, public Subscriber<A> {
+template<class A, class B = A>
+class FluxJust: public Flux<A, B> {
  private:
-  using val_t = typename A::value_type;
-  using vector_val_t = typename std::vector<val_t>;
+  using vector_val_t = typename std::vector<A>;
 
  public:
-  explicit MonoFlatMapIterable() = default;
-
-  void onSubscribe(std::shared_ptr<Subscription> subscription) override {
-    std::cout << "MonoFlatMapIterable onSubscribe" << std::endl;
-    subscription_ = std::move(subscription);
-    subscription_->request(1);
-  }
-
-  void onNext(A t) override {
-    payload_ = std::move(t);
-
-    auto &vectorElements = static_cast<vector_val_t &>(payload_);
-    std::cout << "Received Vector of Elements: " << vectorElements.size()
-              << std::endl;
-  }
-
-  void onError(ReactiveError reactiveError) override {
-    subscriber_->onError(reactiveError);
-  }
-
-  void onComplete() override {
-  }
-
-  void setSubscriptionHook(std::function<void(void)> func) {
-    subscriptionHook_ = std::move(func);
-  }
+  explicit FluxJust(vector_val_t elements)
+      : payload_{std::move(elements)} {}
 
   void subscribe(std::shared_ptr<Subscriber<B>> subscriber) override {
-    std::cout << "MonoFlatMapIterable Subscribe" << std::endl;
-    subscriber_ = std::move(subscriber);
+    std::cout << "FluxJust Subscribe" << std::endl;
+    Flux<A, B>::subscriber_ = std::move(subscriber);
 
-    std::invoke(subscriptionHook_);
+    std::invoke(Flux<A, B>::subscriptionHook_);
 
-    subscription_ = std::make_shared<SubscriptionImpl < A, B>>
-    (*subscriber_.get(), *this);
+    Flux<A, B>::subscription_ = std::make_shared<SubscriptionImpl < A, B>>
+    (*Flux<A, B>::subscriber_.get(), *this);
 
-    subscriber_->onSubscribe(subscription_);
+    Flux<A, B>::subscriber_->onSubscribe(Flux<A, B>::subscription_);
   }
 
-  ~MonoFlatMapIterable() override = default;
+  ~ FluxJust() override = default;
 
  private:
 
@@ -62,7 +41,7 @@ class MonoFlatMapIterable: public Publisher<B>, public Subscriber<A> {
   class SubscriptionImpl: public Subscription {
    public:
     explicit SubscriptionImpl(Subscriber<V> &subscriber,
-                              MonoFlatMapIterable<U, V> &publisher)
+                              FluxJust<U, V> &publisher)
         : subscriber_{subscriber},
           publisher_{publisher},
           requestedSize_{0},
@@ -107,17 +86,14 @@ class MonoFlatMapIterable: public Publisher<B>, public Subscriber<A> {
 
    private:
     Subscriber<V> &subscriber_;
-    MonoFlatMapIterable<U, V> &publisher_;
+    FluxJust<U, V> &publisher_;
     std::int64_t requestedSize_;
     std::int64_t fulfilment_;
   };
 
-  std::shared_ptr<Subscriber<B>> subscriber_;
-  std::shared_ptr<Subscription> subscription_;
-  A payload_;
-  std::function<void(void)> subscriptionHook_;
-
+ private:
   std::size_t currentIndex_{0};
+  vector_val_t payload_;
 };
 
 }

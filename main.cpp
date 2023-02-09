@@ -1,6 +1,5 @@
 #include <iostream>
 #include <vector>
-#include "MonoJust.h"
 #include "Mono.h"
 #include "ConsolePrinterSubscriber.h"
 #include <string>
@@ -11,15 +10,18 @@ int main() {
   std::cout << "Hello, World!" << std::endl;
 
   {
-//    std::shared_ptr<Mono_<std::int32_t>>
-//        mon = Mono_<std::int32_t>::just(600);
-//
-//    std::shared_ptr<ConsolePrinterSubscriber>
-//        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
-//
-//    mon->subscribe(consolePrinter);
+    std::cout << "=============Test Block 2=============" << std::endl;
+    std::shared_ptr<Mono<std::int32_t>> mon = Mono<std::int32_t>::just(600);
+
+    std::shared_ptr<ConsolePrinterSubscriber>
+        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
+
+    mon->subscribe(consolePrinter);
+    std::cout << "======================================" << std::endl;
   }
   {
+
+    std::cout << "=============Test Block 2=============" << std::endl;
     std::shared_ptr<ConsolePrinterSubscriber>
         consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
 
@@ -36,38 +38,39 @@ int main() {
           return in * 8;
         })
         ->filter([](auto val) {
-          return true;
+          if (val < 1000) {
+            return true;
+          }
+
+          return false;
         })
         ->subscribe(consolePrinter);
+
+    std::cout << "======================================" << std::endl;
   }
 
   {
-//    Mono<std::string> monoString{"799"};
-//    auto stringToIntMono = monoString.template map<std::int32_t>(
-//        [](const std::string &input)
-//            -> std::int32_t { return std::stoi(input); });
-//
-//    std::shared_ptr<ConsolePrinterSubscriber>
-//        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
-//
-//    stringToIntMono->subscribe(consolePrinter);
-  }
-  {
-//    std::vector<std::int32_t> elements;
-//    for (int i = 0; i < 100; i++) {
-//      elements.push_back(i);
-//    }
-//
-//    Mono<std::vector<std::int32_t>>
-//        vectorMono{std::move(elements)};
-//
-//    std::shared_ptr<ConsolePrinterSubscriber>
-//        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
-//
-//    vectorMono
-//        .flatMapIterable<std::int32_t>()
-//        ->subscribe(consolePrinter);
+    std::cout << "=============Test Block 3=============" << std::endl;
+    std::vector<std::int32_t> elements;
+    for (int i = 0; i < 59; i++) {
+      elements.push_back(i);
+    }
 
+    auto flux =
+        std::make_shared<FluxJust<std::int32_t>>(std::move(elements));
+
+    std::shared_ptr<ConsolePrinterSubscriber>
+        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
+
+    flux->filter([](auto element) {
+          if (element < 10) {
+            return true;
+          }
+
+          return false;
+        })
+        ->subscribe(std::move(consolePrinter));
+    std::cout << "======================================" << std::endl;
   }
 
   return 0;
