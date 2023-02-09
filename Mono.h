@@ -12,6 +12,7 @@
 #include "MonoMap.h"
 #include "Subscriber.h"
 #include "FluxJust.h"
+#include "MonoFlatMap.h"
 
 namespace rk::projects::reactive {
 
@@ -56,6 +57,22 @@ class Mono: public Publisher<B>, public Subscriber<A> {
 
     return publisher;
   }
+
+  template<class V>
+  std::shared_ptr<Mono<B, V>>
+  flatMap(std::function<std::shared_ptr<Mono<V, V>>(B)> func) {
+    std::shared_ptr<MonoFlatMap<B, V >> publisher =
+        std::make_shared<MonoFlatMap<B, V>>(std::move(func));
+
+    auto subscriptionHookLambda = [subscriber = publisher, this]() {
+      this->subscribe(subscriber);
+    };
+
+    publisher->setSubscriptionHook(subscriptionHookLambda);
+
+    return publisher->inner();
+  }
+
 
   template<class V>
   std::shared_ptr<Flux<B, V>> flatMapIterable() {
@@ -154,6 +171,10 @@ class Mono: public Publisher<B>, public Subscriber<A> {
     Mono<U, V> &publisher_;
   };
 
+ public:
+  B innerValue() {
+    return *payload_;
+  }
 
  protected:
   std::optional<B> payload_;

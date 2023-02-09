@@ -51,6 +51,22 @@ int main() {
 
   {
     std::cout << "=============Test Block 3=============" << std::endl;
+
+    std::shared_ptr<Mono<std::int32_t>> mon = Mono<std::int32_t>::just(5);
+    auto flatM = mon->template flatMap<std::int32_t>([](std::int32_t input) {
+      return Mono<std::int32_t>::just(600);
+    });
+
+    std::shared_ptr<ConsolePrinterSubscriber>
+        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
+
+    flatM->subscribe(consolePrinter);
+
+    std::cout << "======================================" << std::endl;
+  }
+
+  {
+    std::cout << "=============Test Block 4=============" << std::endl;
     std::vector<std::int32_t> elements;
     for (int i = 0; i < 59; i++) {
       elements.push_back(i);
