@@ -72,6 +72,26 @@ int main() {
       elements.push_back(i);
     }
 
+    auto mono = Mono<std::vector<std::int32_t >>::just(elements);
+
+    std::shared_ptr<ConsolePrinterSubscriber>
+        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
+
+    mono->template flatMapIterable<std::int32_t>()
+        ->subscribe(std::move(consolePrinter));
+
+
+    std::cout << "======================================" << std::endl;
+  }
+
+
+  {
+    std::cout << "=============Test Block 5=============" << std::endl;
+    std::vector<std::int32_t> elements;
+    for (int i = 0; i < 59; i++) {
+      elements.push_back(i);
+    }
+
     auto flux =
         std::make_shared<FluxJust<std::int32_t>>(std::move(elements));
 

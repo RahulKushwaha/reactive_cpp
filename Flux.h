@@ -16,7 +16,21 @@ class Flux: public Subscriber<A>, public Publisher<B> {
  public:
   explicit Flux()
       : state_{
-      std::make_unique<State>(State{StateName::SubscriptionStarted})} {};
+      std::make_unique<State>(State{StateName::SubscriptionStarted})},
+        functor_{[this](A a) {
+          if (q_.empty()) {
+            return B{};
+          }
+
+          auto val = q_.front();
+          q_.pop();
+          return val;
+        }},
+        pusher_{[this](A a) {
+          auto val = functor_(a);
+          q_.push(val);
+        }} {
+  };
 
   std::shared_ptr<FluxFilter<A>> filter(std::function<bool(A)> func) {
     std::shared_ptr<FluxFilter<A>> publisher =
@@ -38,7 +52,7 @@ class Flux: public Subscriber<A>, public Publisher<B> {
   }
 
   void onNext(A t) override {
-    q_.push(std::move(t));
+    pusher_(t);
     std::cout << "Flux: Received a new element: " << t << std::endl;
 
     if (state_->stateName != StateName::Complete) {
@@ -59,7 +73,7 @@ class Flux: public Subscriber<A>, public Publisher<B> {
   }
 
   void subscribe(std::shared_ptr<Subscriber<B>> subscriber) override {
-    std::cout << "MonoFlatMapIterable Subscribe" << std::endl;
+    std::cout << "Flux Subscribe" << std::endl;
     subscriber_ = std::move(subscriber);
 
     std::invoke(subscriptionHook_);
@@ -101,8 +115,7 @@ class Flux: public Subscriber<A>, public Publisher<B> {
 
             iteration++;
 
-            auto top = publisher_.q_.front();
-            publisher_.q_.pop();
+            auto top = publisher_.functor_(A{});
 
             subscriber_.onNext(top);
           }
@@ -151,6 +164,8 @@ class Flux: public Subscriber<A>, public Publisher<B> {
   std::shared_ptr<Subscription> subscription_;
   std::queue<B> q_;
   std::function<void(void)> subscriptionHook_{[]() {}};
+  std::function<B(A)> functor_;
+  std::function<void(A)> pusher_;
 };
 
 }
