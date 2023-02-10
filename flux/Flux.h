@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include "Subscriber.h"
+#include "../Subscriber.h"
 #include "FluxFilter.h"
 #include "FluxRange.h"
 
@@ -91,8 +91,8 @@ class Flux: public Subscriber<A>, public Publisher<B> {
 
     std::invoke(subscriptionHook_);
 
-    subscription_ = std::make_shared<SubscriptionImpl < A, B>>
-    (*subscriber_.get(), *this);
+    subscription_ = std::make_shared<FluxSubscription>
+        (*subscriber_.get(), *this);
 
     subscriber_->onSubscribe(subscription_);
   }
@@ -100,62 +100,7 @@ class Flux: public Subscriber<A>, public Publisher<B> {
   ~Flux() override = default;
 
  private:
-
-  template<class U, class V>
-  class SubscriptionImpl:
-      public Subscription {
-   public:
-    explicit SubscriptionImpl(Subscriber<V>
-                              &subscriber,
-                              Flux<U, V> &publisher)
-        : subscriber_{subscriber},
-          publisher_{publisher},
-          requestedSize_{0},
-          fulfilment_{0} {
-    }
-
-    void request(long n) override {
-      requestedSize_ += n;
-
-      if (fulfilment_ == 0) {
-        while (requestedSize_ > 0 && !publisher_.terminationCondition_()) {
-          fulfilment_ = requestedSize_;
-          requestedSize_ = 0;
-
-          std::int64_t iteration = 0;
-          while (iteration < fulfilment_
-              && !publisher_.terminationCondition_()) {
-
-            iteration++;
-
-            auto top = publisher_.generator_(A{});
-
-            subscriber_.onNext(top);
-          }
-
-          if (publisher_.terminationCondition_()) {
-            subscriber_.onComplete();
-          }
-
-          fulfilment_ = 0;
-        }
-      }
-    }
-
-    void cancel()
-    override {
-    }
-
-    ~SubscriptionImpl()
-    override =
-    default;
-
-   private:
-    Subscriber<V> &subscriber_;
-    Flux<U, V> &publisher_;
-    std::int64_t requestedSize_;
-    std::int64_t fulfilment_;
-  };
+  class FluxSubscription;
 
   enum class StateName {
     SubscriptionStarted,
@@ -182,4 +127,58 @@ class Flux: public Subscriber<A>, public Publisher<B> {
   std::function<bool()> terminationCondition_;
 };
 
+template<class U, class V>
+class Flux<U, V>::FluxSubscription: public Subscription {
+ public:
+  explicit FluxSubscription(Subscriber<V> &subscriber, Flux<U, V> &publisher)
+      : subscriber_{subscriber},
+        publisher_{publisher},
+        requestedSize_{0},
+        fulfilment_{0} {}
+
+  void request(long n) override {
+    requestedSize_ += n;
+
+    if (fulfilment_ == 0) {
+      while (requestedSize_ > 0 && !publisher_.terminationCondition_()) {
+        fulfilment_ = requestedSize_;
+        requestedSize_ = 0;
+
+        std::int64_t iteration = 0;
+        while (iteration < fulfilment_
+            && !publisher_.terminationCondition_()) {
+
+          iteration++;
+
+          auto top = publisher_.generator_(U{});
+
+          subscriber_.onNext(top);
+        }
+
+        if (publisher_.terminationCondition_()) {
+          subscriber_.onComplete();
+        }
+
+        fulfilment_ = 0;
+      }
+    }
+  }
+
+  void cancel()
+  override {
+  }
+
+  ~FluxSubscription()
+  override =
+  default;
+
+ private:
+  Subscriber<V> &subscriber_;
+  Flux<U, V> &publisher_;
+  std::int64_t requestedSize_;
+  std::int64_t fulfilment_;
+};
+
 }
+
+

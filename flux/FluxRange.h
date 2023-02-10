@@ -6,7 +6,7 @@
 #include <iostream>
 
 #include "Flux.h"
-#include "Subscriber.h"
+#include "../Subscriber.h"
 
 namespace rk::projects::reactive {
 template<class U, class V>

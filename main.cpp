@@ -1,6 +1,6 @@
 #include <iostream>
 #include <vector>
-#include "Mono.h"
+#include "mono/Mono.h"
 #include "ConsolePrinterSubscriber.h"
 #include <string>
 
@@ -98,7 +98,8 @@ int main() {
     std::shared_ptr<ConsolePrinterSubscriber>
         consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
 
-    flux->filter([](auto element) {
+    flux
+        ->filter([](auto element) {
           if (element < 10) {
             return true;
           }

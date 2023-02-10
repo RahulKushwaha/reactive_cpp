@@ -10,9 +10,9 @@
 #include "MonoJust.h"
 #include "MonoFilter.h"
 #include "MonoMap.h"
-#include "Subscriber.h"
-#include "FluxJust.h"
-#include "FluxIterable.h"
+#include "../Subscriber.h"
+#include "../flux/FluxJust.h"
+#include "../flux/FluxIterable.h"
 #include "MonoFlatMap.h"
 
 namespace rk::projects::reactive {
@@ -103,8 +103,8 @@ class Mono: public Publisher<B>, public Subscriber<A> {
     state_ = std::make_unique<State>(State{StateName::SubscriptionComplete});
 
     // Create Subscription
-    subscription_ = std::make_shared<SubscriptionImpl < A, B>>
-    (*subscriber_.get(), *this);
+    subscription_ = std::make_shared<MonoSubscription>
+        (*subscriber_.get(), *this);
     // Pass subscription
     subscriber_->onSubscribe(subscription_);
   }
@@ -136,41 +136,7 @@ class Mono: public Publisher<B>, public Subscriber<A> {
     StateName stateName;
   };
 
-  template<class U, class V>
-  class SubscriptionImpl: public Subscription {
-   public:
-    explicit SubscriptionImpl(Subscriber<V> &subscriber,
-                              Mono<U, V> &publisher)
-        : subscriber_{subscriber},
-          publisher_{publisher} {
-    }
-
-    void request(long n) override {
-      std::cout << "Mono Request" << std::endl;
-      if (publisher_.state_->stateName != StateName::Complete
-          && publisher_.payload_.has_value()) {
-        // Fix me: Move object
-        auto value = *publisher_.payload_;
-        publisher_.payload_.reset();
-        subscriber_.onNext(std::move(value));
-
-
-        publisher_.state_ =
-            std::make_unique<State>(State{StateName::Complete});
-      }
-
-      subscriber_.onComplete();
-    }
-
-    void cancel() override {
-    }
-
-    ~SubscriptionImpl() override = default;
-
-   private:
-    Subscriber<V> &subscriber_;
-    Mono<U, V> &publisher_;
-  };
+  class MonoSubscription;
 
  public:
   B innerValue() {
@@ -184,6 +150,42 @@ class Mono: public Publisher<B>, public Subscriber<A> {
   std::shared_ptr<Subscription> subscription_;
   // Initialize with empty function
   std::function<void(void)> subscriptionHook_{[]() {}};
+};
+
+template<class U, class V>
+class Mono<U, V>::MonoSubscription: public Subscription {
+ public:
+  explicit MonoSubscription(Subscriber<V> &subscriber,
+                            Mono<U, V> &publisher)
+      : subscriber_{subscriber},
+        publisher_{publisher} {
+  }
+
+  void request(long n) override {
+    std::cout << "Mono Request" << std::endl;
+    if (publisher_.state_->stateName != StateName::Complete
+        && publisher_.payload_.has_value()) {
+      // Fix me: Move object
+      auto value = *publisher_.payload_;
+      publisher_.payload_.reset();
+      subscriber_.onNext(std::move(value));
+
+
+      publisher_.state_ =
+          std::make_unique<State>(State{StateName::Complete});
+    }
+
+    subscriber_.onComplete();
+  }
+
+  void cancel() override {
+  }
+
+  ~MonoSubscription() override = default;
+
+ private:
+  Subscriber<V> &subscriber_;
+  Mono<U, V> &publisher_;
 };
 
 }
