@@ -15,8 +15,7 @@ class MonoFlatMap: public Mono<A, B> {
  public:
   explicit MonoFlatMap(
       std::function<std::shared_ptr<Mono<B, B>>(A)> functor)
-      : Mono<A, B>{B{}},
-        innerMono_{std::move(functor)(B{})} {}
+      : innerMono_{std::move(functor)(B{})} {}
 
   void onNext(A a) override {
     std::cout << "Mono Flat Map Value Received: " << a << std::endl;

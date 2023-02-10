@@ -14,7 +14,7 @@ template<class A>
 class MonoFilter: public virtual Mono<A, A> {
  public:
   explicit MonoFilter(std::function<bool(A)> functor)
-      : Mono<A, A>(A{}), functor_{std::move(functor)} {}
+      : functor_{std::move(functor)} {}
 
   void onNext(A a) override {
     std::cout << "Value Received: " << a << std::endl;

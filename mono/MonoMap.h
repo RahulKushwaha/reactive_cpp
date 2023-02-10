@@ -11,7 +11,7 @@ template<class A, class B>
 class MonoMap: public Mono<A, B> {
  public:
   explicit MonoMap(std::function<B(A)> functor)
-      : Mono<A, B>{B{}}, functor_{std::move(functor)} {}
+      : functor_{std::move(functor)} {}
 
   void onNext(A a) override {
     std::cout << "Value Received: " << a << std::endl;

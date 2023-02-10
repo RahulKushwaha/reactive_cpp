@@ -24,6 +24,7 @@ template<class A, class B = A>
 class Mono: public Publisher<B>, public Subscriber<A> {
  public:
   explicit Mono(B b) : payload_{b} {}
+  Mono() : payload_{} {}
 
   static std::shared_ptr<Mono<A, B>> just(B a) {
     std::shared_ptr<MonoJust<B>> publisher =
@@ -137,11 +138,6 @@ class Mono: public Publisher<B>, public Subscriber<A> {
   };
 
   class MonoSubscription;
-
- public:
-  B innerValue() {
-    return *payload_;
-  }
 
  protected:
   std::optional<B> payload_;

@@ -164,13 +164,9 @@ class Flux<U, V>::FluxSubscription: public Subscription {
     }
   }
 
-  void cancel()
-  override {
-  }
+  void cancel() override {}
 
-  ~FluxSubscription()
-  override =
-  default;
+  ~FluxSubscription() override = default;
 
  private:
   Subscriber<V> &subscriber_;
