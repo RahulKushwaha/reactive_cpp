@@ -20,7 +20,7 @@ class FluxIterable: public Flux<A, B> {
  public:
   explicit FluxIterable(vector_val_t elements = vector_val_t{}) {
     for (auto &element: elements) {
-      auto val = Flux<A, B>::functor_(element);
+      auto val = Flux<A, B>::generator_(element);
       Flux<A, B>::q_.push(val);
     }
   }

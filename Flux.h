@@ -5,6 +5,7 @@
 #pragma once
 #include "Subscriber.h"
 #include "FluxFilter.h"
+#include "FluxRange.h"
 
 #include <iostream>
 #include <queue>
@@ -17,7 +18,7 @@ class Flux: public Subscriber<A>, public Publisher<B> {
   explicit Flux()
       : state_{
       std::make_unique<State>(State{StateName::SubscriptionStarted})},
-        functor_{[this](A a) {
+        generator_{[this](A a) {
           if (q_.empty()) {
             return B{};
           }
@@ -27,10 +28,22 @@ class Flux: public Subscriber<A>, public Publisher<B> {
           return val;
         }},
         pusher_{[this](A a) {
-          auto val = functor_(a);
+          auto val = generator_(a);
           q_.push(val);
+        }},
+        terminationCondition_{[this]() {
+          return q_.empty();
         }} {
   };
+
+  static std::shared_ptr<FluxRange<std::int64_t>>
+  range(std::int64_t start = 0,
+        std::int64_t end = std::numeric_limits<std::int64_t>::max()) {
+    std::shared_ptr<FluxRange<std::int64_t>> publisher =
+        std::make_shared<FluxRange<std::int64_t>>(start, end);
+
+    return publisher;
+  }
 
   std::shared_ptr<FluxFilter<A>> filter(std::function<bool(A)> func) {
     std::shared_ptr<FluxFilter<A>> publisher =
@@ -101,26 +114,26 @@ class Flux: public Subscriber<A>, public Publisher<B> {
           fulfilment_{0} {
     }
 
-    void request(long n)
-    override {
+    void request(long n) override {
       requestedSize_ += n;
 
       if (fulfilment_ == 0) {
-        while (requestedSize_ > 0 && !publisher_.q_.empty()) {
+        while (requestedSize_ > 0 && !publisher_.terminationCondition_()) {
           fulfilment_ = requestedSize_;
           requestedSize_ = 0;
 
           std::int64_t iteration = 0;
-          while (iteration < fulfilment_ && !publisher_.q_.empty()) {
+          while (iteration < fulfilment_
+              && !publisher_.terminationCondition_()) {
 
             iteration++;
 
-            auto top = publisher_.functor_(A{});
+            auto top = publisher_.generator_(A{});
 
             subscriber_.onNext(top);
           }
 
-          if (publisher_.q_.empty()) {
+          if (publisher_.terminationCondition_()) {
             subscriber_.onComplete();
           }
 
@@ -164,8 +177,9 @@ class Flux: public Subscriber<A>, public Publisher<B> {
   std::shared_ptr<Subscription> subscription_;
   std::queue<B> q_;
   std::function<void(void)> subscriptionHook_{[]() {}};
-  std::function<B(A)> functor_;
+  std::function<B(A)> generator_;
   std::function<void(A)> pusher_;
+  std::function<bool()> terminationCondition_;
 };
 
 }

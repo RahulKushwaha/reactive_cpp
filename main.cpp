@@ -11,7 +11,7 @@ int main() {
 
   {
     std::cout << "=============Test Block 2=============" << std::endl;
-    std::shared_ptr<Mono<std::int32_t>> mon = Mono<std::int32_t>::just(600);
+    std::shared_ptr<Mono<std::int64_t>> mon = Mono<std::int64_t>::just(600);
 
     std::shared_ptr<ConsolePrinterSubscriber>
         consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
@@ -30,11 +30,11 @@ int main() {
     std::shared_ptr<Mono<std::string>>
         mon = Mono<std::string>::just(input);
 
-    mon->template map<int>([](const std::string &input) {
+    mon->template map<int64_t>([](const std::string &input) {
           return std::stoi(input);
         })
         ->
-            template map<int>([](int in) {
+            template map<int64_t>([](int64_t in) {
           return in * 8;
         })
         ->filter([](auto val) {
@@ -52,9 +52,9 @@ int main() {
   {
     std::cout << "=============Test Block 3=============" << std::endl;
 
-    std::shared_ptr<Mono<std::int32_t>> mon = Mono<std::int32_t>::just(5);
-    auto flatM = mon->template flatMap<std::int32_t>([](std::int32_t input) {
-      return Mono<std::int32_t>::just(600);
+    std::shared_ptr<Mono<std::int64_t>> mon = Mono<std::int64_t>::just(5);
+    auto flatM = mon->template flatMap<std::int64_t>([](std::int64_t input) {
+      return Mono<std::int64_t>::just(600);
     });
 
     std::shared_ptr<ConsolePrinterSubscriber>
@@ -67,17 +67,17 @@ int main() {
 
   {
     std::cout << "=============Test Block 4=============" << std::endl;
-    std::vector<std::int32_t> elements;
+    std::vector<std::int64_t> elements;
     for (int i = 0; i < 59; i++) {
       elements.push_back(i);
     }
 
-    auto mono = Mono<std::vector<std::int32_t >>::just(elements);
+    auto mono = Mono<std::vector<std::int64_t >>::just(elements);
 
     std::shared_ptr<ConsolePrinterSubscriber>
         consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
 
-    mono->template flatMapIterable<std::int32_t>()
+    mono->template flatMapIterable<std::int64_t>()
         ->subscribe(std::move(consolePrinter));
 
 
@@ -87,13 +87,13 @@ int main() {
 
   {
     std::cout << "=============Test Block 5=============" << std::endl;
-    std::vector<std::int32_t> elements;
+    std::vector<std::int64_t> elements;
     for (int i = 0; i < 59; i++) {
       elements.push_back(i);
     }
 
     auto flux =
-        std::make_shared<FluxJust<std::int32_t>>(std::move(elements));
+        std::make_shared<FluxJust<std::int64_t>>(std::move(elements));
 
     std::shared_ptr<ConsolePrinterSubscriber>
         consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
@@ -106,6 +106,18 @@ int main() {
           return false;
         })
         ->subscribe(std::move(consolePrinter));
+    std::cout << "======================================" << std::endl;
+  }
+
+  {
+    std::cout << "=============Test Block 6=============" << std::endl;
+
+    auto fluxRange = Flux<std::int64_t>::range(5, 10);
+
+    std::shared_ptr<ConsolePrinterSubscriber>
+        consolePrinter = std::make_shared<ConsolePrinterSubscriber>();
+
+    fluxRange->subscribe(consolePrinter);
     std::cout << "======================================" << std::endl;
   }
 

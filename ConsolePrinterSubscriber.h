@@ -9,9 +9,9 @@
 
 namespace rk::projects::reactive {
 
-class ConsolePrinterSubscriber: public BaseSubscriber<std::int32_t> {
+class ConsolePrinterSubscriber: public BaseSubscriber<std::int64_t> {
  public:
-  void onNext(std::int32_t num) override {
+  void onNext(std::int64_t num) override {
 
     std::cout << "Number Consumed: " << num << std::endl;
 
